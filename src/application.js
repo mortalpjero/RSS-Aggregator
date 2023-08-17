@@ -28,6 +28,32 @@ const validation = (item, i18n) => {
   return validateLink(item);
 };
 
+// Изменения state
+
+const handleLinkValidation = (watchedState) => {
+  validateLink(watchedState.link).then((validateLinkResult) => {
+    const updatedWatchedState = { ...watchedState };
+
+    // Если ошибки есть, то форма становится невалдиной
+    // Если в существующий ссылках есть ссылка, то появляется ошибка
+    // В остальных случаях форма валидна
+    if (!_.isEmpty(validateLinkResult)) {
+      updatedWatchedState.link.status = 'invalid';
+      updatedWatchedState.link.error = validateLinkResult.linkContent.message;
+    } else if (
+      updatedWatchedState.link.existingLinks.includes(updatedWatchedState.link.linkContent)
+    ) {
+      updatedWatchedState.link.status = 'invalid';
+      updatedWatchedState.link.error = 'RSS уже существует';
+    } else {
+      updatedWatchedState.link.status = 'valid';
+      updatedWatchedState.link.error = '';
+      updatedWatchedState.link.existingLinks.push(updatedWatchedState.link.linkContent);
+    }
+    view(updatedWatchedState);
+  });
+};
+
 // Логика валидации ссылки
 
 const app = (i18n) => {
@@ -78,7 +104,8 @@ const app = (i18n) => {
   const form = document.querySelector('.rss-form');
 
   linkInput.addEventListener('input', (e) => {
-    watchedState.link.linkContent = e.target.value;
+    const input = e.target.value;
+    watchedState.link.linkContent = input.trim();
   });
 
   form.addEventListener('submit', (e) => {
