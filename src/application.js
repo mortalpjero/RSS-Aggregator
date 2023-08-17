@@ -2,26 +2,35 @@ import * as yup from 'yup';
 import _ from 'lodash';
 import onChange from 'on-change';
 import view from './view';
+import genLocales from './locales/locale';
 
-// Список возможных ошибок
+// Валидация и генерирования ошибок
+// в зависимости от текста в i18next
 
-const schema = yup.object().shape({
-  linkContent: yup.string().url('Ссылка должна быть валидным URL').required(),
-});
+const validation = (item, i18n) => {
+  const locales = genLocales(i18n);
+  yup.setLocale(locales);
 
-// Логика поиска ошибок
+  const schema = yup.object().shape({
+    linkContent: yup.string().url().required(),
+  });
 
-const validateLink = (fields) => {
-  const validation = schema
-    .validate(fields, { abortEarly: false })
-    .then(() => { })
-    .catch((e) => _.keyBy(e.inner, 'path'));
-  return validation;
+  // Логика поиска ошибок
+
+  const validateLink = (fields) => {
+    const validationSchema = schema
+      .validate(fields, { abortEarly: false })
+      .then(() => { })
+      .catch((e) => _.keyBy(e.inner, 'path'));
+    return validationSchema;
+  };
+
+  return validateLink(item);
 };
 
 // Логика валидации ссылки
 
-const app = () => {
+const app = (i18n) => {
   const state = {
     link: {
       status: 'invalid',
@@ -33,8 +42,8 @@ const app = () => {
 
   // Изменения state
 
-  const handleLinkValidation = (watchedState) => {
-    validateLink(watchedState.link).then((validateLinkResult) => {
+  const handleLinkValidation = (watchedState, i18nInstance) => {
+    validation(watchedState.link, i18nInstance).then((validateLinkResult) => {
       const updatedWatchedState = { ...watchedState };
 
       // Если ошибки есть, то форма становится невалдиной
@@ -47,7 +56,7 @@ const app = () => {
         updatedWatchedState.link.existingLinks.includes(updatedWatchedState.link.linkContent)
       ) {
         updatedWatchedState.link.status = 'invalid';
-        updatedWatchedState.link.error = 'RSS уже существует';
+        updatedWatchedState.link.error = i18n.t('errors.existingRSS');
       } else {
         updatedWatchedState.link.status = 'valid';
         updatedWatchedState.link.error = '';
@@ -61,7 +70,7 @@ const app = () => {
 
   const watchedState = onChange(state, (path) => {
     if (path === 'link.status' && watchedState.link.status === 'validation') {
-      handleLinkValidation(watchedState);
+      handleLinkValidation(watchedState, i18n);
     }
   });
 
