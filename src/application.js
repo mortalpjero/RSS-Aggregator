@@ -3,6 +3,7 @@ import _ from 'lodash';
 import onChange from 'on-change';
 import view from './view';
 import genLocales from './locales/locale';
+import constants from './utils/constants';
 
 // Валидация и генерирования ошибок
 // в зависимости от текста в i18next
@@ -28,12 +29,34 @@ const validation = (item, i18n) => {
   return validateLink(item);
 };
 
+// Логика валидации и обновления watchedState
+
+const validateAndUpdateWatchedState = (watchedState, validateLinkResult, i18n) => {
+  const updatedWatchedState = { ...watchedState };
+
+  if (!_.isEmpty(validateLinkResult)) {
+    updatedWatchedState.link.status = constants.status.invalid;
+    updatedWatchedState.link.error = validateLinkResult.linkContent.message;
+  } else if (
+    updatedWatchedState.link.existingLinks.includes(updatedWatchedState.link.linkContent)
+  ) {
+    updatedWatchedState.link.status = constants.status.invalid;
+    updatedWatchedState.link.error = i18n.t('errors.existingRSS');
+  } else {
+    updatedWatchedState.link.status = constants.status.valid;
+    updatedWatchedState.link.error = '';
+    updatedWatchedState.link.existingLinks.push(updatedWatchedState.link.linkContent);
+  }
+
+  return updatedWatchedState;
+};
+
 // Логика валидации ссылки
 
 const app = (i18n) => {
   const state = {
     link: {
-      status: 'invalid',
+      status: constants.status.invalid,
       linkContent: '',
       existingLinks: [],
       error: '',
@@ -43,33 +66,15 @@ const app = (i18n) => {
   // Изменения state
 
   const handleLinkValidation = (watchedState, i18nInstance) => {
-    validation(watchedState.link, i18nInstance).then((validateLinkResult) => {
-      const updatedWatchedState = { ...watchedState };
-
-      // Если ошибки есть, то форма становится невалдиной
-      // Если в существующий ссылках есть ссылка, то появляется ошибка
-      // В остальных случаях форма валидна
-      if (!_.isEmpty(validateLinkResult)) {
-        updatedWatchedState.link.status = 'invalid';
-        updatedWatchedState.link.error = validateLinkResult.linkContent.message;
-      } else if (
-        updatedWatchedState.link.existingLinks.includes(updatedWatchedState.link.linkContent)
-      ) {
-        updatedWatchedState.link.status = 'invalid';
-        updatedWatchedState.link.error = i18n.t('errors.existingRSS');
-      } else {
-        updatedWatchedState.link.status = 'valid';
-        updatedWatchedState.link.error = '';
-        updatedWatchedState.link.existingLinks.push(updatedWatchedState.link.linkContent);
-      }
-      view(updatedWatchedState);
-    });
+    validation(watchedState.link, i18nInstance)
+      .then((valResult) => validateAndUpdateWatchedState(watchedState, valResult, i18nInstance))
+      .then(() => view(watchedState));
   };
 
   // Логика контроллера
 
   const watchedState = onChange(state, (path) => {
-    if (path === 'link.status' && watchedState.link.status === 'validation') {
+    if (path === 'link.status' && watchedState.link.status === constants.status.validation) {
       handleLinkValidation(watchedState, i18n);
     }
   });
@@ -78,12 +83,12 @@ const app = (i18n) => {
   const form = document.querySelector('.rss-form');
 
   linkInput.addEventListener('input', (e) => {
-    watchedState.link.linkContent = e.target.value;
+    watchedState.link.linkContent = e.target.value.trim();
   });
 
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    watchedState.link.status = 'validation';
+    watchedState.link.status = constants.status.validation;
     form.reset();
   });
 };
