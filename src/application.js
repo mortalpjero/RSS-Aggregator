@@ -34,6 +34,14 @@ const validation = (item, i18n) => {
 
 const findById = (items, id) => items.find((item) => item.id === id);
 
+// Обновление ошибок и статуса
+
+const updateLinkStatusAndError = (linkState, status, error) => {
+  const copyLinkState = linkState;
+  copyLinkState.link.status = status;
+  copyLinkState.link.error = error;
+};
+
 // Модификация Watched State, добавление постов и фидов
 
 const generateRSSInfo = (DOMTree, watchedState) => {
@@ -79,11 +87,9 @@ const getRSS = (watchedState, i18n) => {
     .then((DOM) => {
       const error = DOM.querySelector('parsererror');
       if (error) {
-        newWatchedState.link.status = constants.status.invalid;
-        newWatchedState.link.error = i18n.t('errors.invalidRSS');
+        updateLinkStatusAndError(newWatchedState, constants.status.invalid, i18n.t('errors.invalidRSS'));
       } else {
-        newWatchedState.link.status = constants.status.valid;
-        newWatchedState.link.error = i18n.t('success');
+        updateLinkStatusAndError(newWatchedState, constants.status.valid, i18n.t('success'));
         newWatchedState.link.existingLinks.unshift((newWatchedState.link.toBeChecked));
         generateRSSInfo(DOM, newWatchedState);
       }
@@ -108,16 +114,17 @@ const validateAndUpdateWatchedState = (watchedState, validateLinkResult, i18n) =
   const updatedWatchedState = { ...watchedState };
 
   if (!_.isEmpty(validateLinkResult)) {
-    updatedWatchedState.link.status = constants.status.invalid;
-    updatedWatchedState.link.error = validateLinkResult.linkContent.message;
+    updateLinkStatusAndError(
+      updatedWatchedState,
+      constants.status.invalid,
+      validateLinkResult.linkContent.message,
+    );
   } else if (
     updatedWatchedState.link.existingLinks.includes(updatedWatchedState.link.linkContent)
   ) {
-    updatedWatchedState.link.status = constants.status.invalid;
-    updatedWatchedState.link.error = i18n.t('errors.existingRSS');
+    updateLinkStatusAndError(updatedWatchedState, constants.status.invalid, i18n.t('errors.existingRSS'));
   } else {
-    updatedWatchedState.link.status = constants.status.valid;
-    updatedWatchedState.link.error = '';
+    updateLinkStatusAndError(updatedWatchedState, constants.status.valid, '');
     updatedWatchedState.link.toBeChecked = updatedWatchedState.link.linkContent;
   }
 
