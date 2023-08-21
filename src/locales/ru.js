@@ -8,6 +8,9 @@ export default {
         invalidRSS: 'Ресурс не содержит валидный RSS',
       },
       success: 'RSS успешно загружен',
+      feeds: 'Фиды',
+      posts: 'Посты',
+      watch: 'Просмотр',
     },
   },
 };
