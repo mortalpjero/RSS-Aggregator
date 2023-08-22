@@ -61,7 +61,14 @@ const viewPosts = (state, mainContainer, i18n) => {
 
   state.RSSLinks.posts.forEach((post) => {
     const postsItem = document.createElement('li');
-    postsItem.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-start', 'border-0', 'border-end-0');
+    postsItem.classList.add(
+      'list-group-item',
+      'd-flex',
+      'justify-content-between',
+      'align-items-start',
+      'border-0',
+      'border-end-0',
+    );
 
     const link = document.createElement('a');
     if (post.clicked === constants.status.clicked) {
@@ -109,13 +116,19 @@ const view = (state, i18n) => {
   const feedback = document.querySelector('.feedback');
   const feeds = document.querySelector('.feeds');
   const posts = document.querySelector('.posts');
+  const submitBtn = document.querySelector('[type="submit"]');
 
   linkInput.classList.toggle('is-invalid', state.link.status === constants.status.invalid);
-  linkInput.classList.toggle('is-valid', state.link.status === constants.status.valid);
   feedback.classList.toggle('text-danger', state.link.status === constants.status.invalid);
   feedback.classList.toggle('text-success', state.link.status === constants.status.valid);
 
   feedback.textContent = state.link.error;
+
+  if (state.link.submit === constants.submit.disabled) {
+    submitBtn.setAttribute('disabled', true); // Disable the button
+  } else {
+    submitBtn.removeAttribute('disabled'); // Enable the button
+  }
 
   if (state.RSSLinks.status === constants.status.render) {
     viewFeeds(state, feeds, i18n);

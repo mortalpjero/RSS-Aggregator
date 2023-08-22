@@ -124,6 +124,7 @@ const validateAndUpdateWatchedState = (watchedState, validateLinkResult, i18n) =
   ) {
     updateLinkStatusAndError(updatedWatchedState, constants.status.invalid, i18n.t('errors.existingRSS'));
   } else {
+    updatedWatchedState.link.submit = constants.submit.enabled;
     updateLinkStatusAndError(updatedWatchedState, constants.status.valid, '');
     updatedWatchedState.link.toBeChecked = updatedWatchedState.link.linkContent;
   }
@@ -134,6 +135,9 @@ const validateAndUpdateWatchedState = (watchedState, validateLinkResult, i18n) =
 // Логика валидации ссылки
 
 const app = (i18n) => {
+  const linkInput = document.querySelector('#url-input');
+  const form = document.querySelector('.rss-form');
+
   const state = {
     link: {
       status: constants.status.invalid,
@@ -141,6 +145,7 @@ const app = (i18n) => {
       toBeChecked: '',
       existingLinks: [],
       error: '',
+      submit: constants.submit.enabled,
     },
     RSSLinks: {
       status: constants.status.empty,
@@ -166,12 +171,24 @@ const app = (i18n) => {
   // Логика контроллера
 
   const watchedState = onChange(state, (path) => {
-    if (path === 'link.status' && watchedState.link.status === constants.status.validation) {
-      handleLinkValidation(watchedState, i18n);
+    if (path === 'link.status') {
+      if (watchedState.link.status === constants.status.validation) {
+        watchedState.link.submit = constants.submit.disabled;
+        handleLinkValidation(watchedState, i18n);
+      }
+      if (watchedState.link.status === constants.status.valid) {
+        form.reset();
+        linkInput.focus();
+      }
     }
     if (path === 'link.toBeChecked') {
       getRSS(watchedState, i18n);
       watchedState.RSSLinks.status = constants.status.rendered;
+    }
+    if (path === 'link.submit') {
+      if (watchedState.link.submit === constants.submit.enabled) {
+        view(watchedState, i18n);
+      }
     }
     if (path === 'modalWindow.status' && watchedState.modalWindow.status === constants.status.render) {
       modalSetting(watchedState);
@@ -179,17 +196,18 @@ const app = (i18n) => {
       watchedState.modalWindow.status = constants.status.rendered;
     }
   });
-  const linkInput = document.querySelector('#url-input');
-  const form = document.querySelector('.rss-form');
 
   linkInput.addEventListener('input', (e) => {
     watchedState.link.linkContent = e.target.value.trim();
   });
 
+  linkInput.addEventListener('click', () => {
+    watchedState.link.submit = constants.submit.enabled;
+  });
+
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     watchedState.link.status = constants.status.validation;
-    form.reset();
   });
 
   document.addEventListener('click', (e) => {

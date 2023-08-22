@@ -9,6 +9,12 @@ const constants = {
     rendered: 'rendered',
     empty: 'empty',
     clicked: 'clicked',
+    typing: 'typing',
+  },
+
+  submit: {
+    enabled: 'enabled',
+    disabled: 'disabled',
   },
 };
 
