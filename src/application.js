@@ -135,12 +135,12 @@ const validateAndUpdateWatchedState = (watchedState, validateLinkResult, i18n) =
 // Логика валидации ссылки
 
 const app = (i18n) => {
-// Форма и инпут для фокуса и ресета при отправке
+  // Форма и инпут для фокуса и ресета при отправке
 
   const linkInput = document.querySelector('#url-input');
   const form = document.querySelector('.rss-form');
 
-// Стейт приложения
+  // Стейт приложения
 
   const state = {
     link: {
