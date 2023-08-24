@@ -4,7 +4,6 @@
   "description": "My webpack project",
   "main": "testfile.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "build": "webpack --mode=production --node-env=production",
     "build:dev": "webpack --mode=development",
     "build:prod": "webpack --mode=production --node-env=production",
@@ -16,6 +15,7 @@
   "devDependencies": {
     "@babel/core": "^7.22.10",
     "@babel/preset-env": "^7.22.10",
+    "@playwright/test": "^1.37.1",
     "@webpack-cli/generators": "^3.0.7",
     "autoprefixer": "^10.4.15",
     "babel-loader": "^9.1.3",
