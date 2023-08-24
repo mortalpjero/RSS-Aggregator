@@ -44,39 +44,80 @@ const updateLinkStatusAndError = (linkState, status, error) => {
 
 // Модификация Watched State, добавление постов и фидов
 
+const genPosts = (DOM) => {
+  const allPosts = DOM.querySelectorAll('item');
+  const processedPosts = Array.from(allPosts).map((singleItem) => {
+    const postTitle = singleItem.querySelector('title');
+    const postDescription = singleItem.querySelector('description');
+    const postLink = singleItem.querySelector('link');
+    return {
+      title: postTitle.textContent,
+      description: postDescription.textContent,
+      link: postLink.textContent,
+      id: _.uniqueId(),
+      clicked: null,
+    };
+  });
+
+  return processedPosts;
+};
+
+// Функция генерирует все посты и фиды найденные на
+// RSS сайте
+
 const generateRSSInfo = (DOMTree, watchedState) => {
   const newWatchedState = { ...watchedState };
   const mainTitle = DOMTree.querySelector('title');
   const mainDescription = DOMTree.querySelector('description');
-  const allPosts = DOMTree.querySelectorAll('item');
   const postUniqueId = _.uniqueId();
   const feedInstance = {
     id: postUniqueId,
     title: mainTitle.textContent,
     description: mainDescription.textContent,
+    url: watchedState.link.toBeChecked,
   };
   const newPosts = [];
 
-  allPosts.forEach((singleItem) => {
-    const postTitle = singleItem.querySelector('title');
-    const postDescription = singleItem.querySelector('description');
-    const postLink = singleItem.querySelector('link');
-    const postInstance = {
-      title: postTitle.textContent,
-      description: postDescription.textContent,
-      link: postLink.textContent,
-      feedId: postUniqueId,
-      id: _.uniqueId(),
-      clicked: null,
-    };
-    newPosts.push(postInstance);
+  const allPosts = genPosts(DOMTree);
+  allPosts.forEach((post) => {
+    const modifiedPost = { ...post, feedId: postUniqueId };
+    newPosts.push(modifiedPost);
   });
 
-  // Combine new posts and existing posts, putting new posts on top
   newWatchedState.RSSLinks.posts = [...newPosts, ...newWatchedState.RSSLinks.posts];
 
   newWatchedState.RSSLinks.status = constants.status.render;
   newWatchedState.RSSLinks.feeds.unshift(feedInstance);
+};
+
+// Функция обновления постов каждые 5 секунд
+// setTimeout ищет новые посты, а view рендерит их
+
+const updatePosts = (watchedState) => {
+  const copyState = { ...watchedState };
+  const updateInterval = 5000;
+
+  const promises = copyState.RSSLinks.feeds.map(({ id, url }) => requestDOM(url)
+    .then((response) => {
+      const posts = genPosts(response);
+      const currentPosts = watchedState.RSSLinks.posts.flat();
+      const newPosts = _.differenceBy(posts, currentPosts, 'title')
+        .map((newPost) => ({
+          ...newPost,
+          feedId: id,
+          id: _.uniqueId(),
+        }));
+
+      copyState.RSSLinks.posts = [...newPosts, ...watchedState.RSSLinks.posts];
+    })
+    .then(() => {
+      copyState.RSSLinks.status = constants.status.update;
+    }));
+
+  return Promise.all(promises)
+    .finally(() => {
+      setTimeout(() => updatePosts(copyState), updateInterval);
+    });
 };
 
 // Получение RSS данных
@@ -106,6 +147,7 @@ const modalSetting = (watchedState) => {
   newWatchedState.modalWindow.status = constants.status.render;
   newWatchedState.modalWindow.title = desiredEl.title;
   newWatchedState.modalWindow.description = desiredEl.description;
+  newWatchedState.modalWindow.url = desiredEl.link;
 };
 
 // Логика валидации и обновления watchedState
@@ -124,7 +166,6 @@ const validateAndUpdateWatchedState = (watchedState, validateLinkResult, i18n) =
   ) {
     updateLinkStatusAndError(updatedWatchedState, constants.status.invalid, i18n.t('errors.existingRSS'));
   } else {
-    updatedWatchedState.link.submit = constants.submit.enabled;
     updateLinkStatusAndError(updatedWatchedState, constants.status.valid, '');
     updatedWatchedState.link.toBeChecked = updatedWatchedState.link.linkContent;
   }
@@ -189,6 +230,20 @@ const app = (i18n) => {
       getRSS(watchedState, i18n);
       watchedState.RSSLinks.status = constants.status.rendered;
     }
+    if (path === 'RSSLinks.status') {
+      if (watchedState.RSSLinks.status === constants.status.update) {
+        view(watchedState, i18n);
+        watchedState.RSSLinks.status = constants.status.render;
+      }
+      if (watchedState.RSSLinks.status === constants.status.rendered) {
+        watchedState.link.submit = constants.submit.disabled;
+        view(watchedState, i18n);
+      }
+      if (watchedState.RSSLinks.status === constants.status.render) {
+        watchedState.link.submit = constants.submit.enabled;
+        view(watchedState, i18n);
+      }
+    }
     if (path === 'link.submit') {
       if (watchedState.link.submit === constants.submit.enabled) {
         view(watchedState, i18n);
@@ -201,6 +256,8 @@ const app = (i18n) => {
     }
   });
 
+  updatePosts(watchedState);
+
   // Все эвенты приложения
 
   linkInput.addEventListener('input', (e) => {
@@ -208,7 +265,11 @@ const app = (i18n) => {
   });
 
   linkInput.addEventListener('click', () => {
-    watchedState.link.submit = constants.submit.enabled;
+    if (
+      watchedState.link.status === constants.status.invalid
+    ) {
+      watchedState.link.submit = constants.submit.enabled;
+    }
   });
 
   form.addEventListener('submit', (e) => {
@@ -217,7 +278,7 @@ const app = (i18n) => {
   });
 
   document.addEventListener('click', (e) => {
-    const targetBtn = e.target.closest('[data-bs-toggle="modal"], [target="_blank"]');
+    const targetBtn = e.target.closest('[data-bs-toggle="modal"], li [target="_blank"]');
     if (targetBtn) {
       const btnId = targetBtn.getAttribute('data-id');
       watchedState.modalWindow.id = btnId;

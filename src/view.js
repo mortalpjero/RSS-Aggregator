@@ -105,8 +105,10 @@ const viewPosts = (state, mainContainer, i18n) => {
 const viewModal = (state) => {
   const title = document.querySelector('.modal-title');
   const description = document.querySelector('.modal-body');
+  const article = document.querySelector('.full-article');
   title.textContent = state.modalWindow.title;
   description.textContent = state.modalWindow.description;
+  article.setAttribute('href', state.modalWindow.url);
 };
 
 // Логика визуальных обновлений
@@ -130,7 +132,9 @@ const view = (state, i18n) => {
     submitBtn.removeAttribute('disabled'); // Enable the button
   }
 
-  if (state.RSSLinks.status === constants.status.render) {
+  if (
+    state.RSSLinks.status === constants.status.render
+    || state.RSSLinks.status === constants.status.update) {
     viewFeeds(state, feeds, i18n);
     viewPosts(state, posts, i18n);
   }

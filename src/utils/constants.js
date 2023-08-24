@@ -10,6 +10,7 @@ const constants = {
     empty: 'empty',
     clicked: 'clicked',
     typing: 'typing',
+    update: 'update',
   },
 
   submit: {
