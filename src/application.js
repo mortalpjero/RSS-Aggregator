@@ -32,7 +32,7 @@ const validation = (item, i18n) => {
 
 // Логика поиска по ID
 
-const findById = (items, id) => items.find((item) => item.id === id);
+const findItemById = (items, id) => items.find((item) => item.id === id);
 
 // Обновление ошибок и статуса
 
@@ -145,7 +145,7 @@ const getRSS = (watchedState, i18n) => {
 
 const modalSetting = (watchedState) => {
   const newWatchedState = { ...watchedState };
-  const desiredEl = findById(newWatchedState.RSSLinks.posts, newWatchedState.modalWindow.id);
+  const desiredEl = findItemById(newWatchedState.RSSLinks.posts, newWatchedState.modalWindow.id);
   desiredEl.clicked = constants.status.clicked;
   newWatchedState.modalWindow.status = constants.status.render;
   newWatchedState.modalWindow.title = desiredEl.title;
