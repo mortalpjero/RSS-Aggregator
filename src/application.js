@@ -131,9 +131,12 @@ const getRSS = (watchedState, i18n) => {
         updateLinkStatusAndError(newWatchedState, constants.status.invalid, i18n.t('errors.invalidRSS'));
       } else {
         updateLinkStatusAndError(newWatchedState, constants.status.valid, i18n.t('success'));
-        newWatchedState.link.existingLinks.unshift((newWatchedState.link.toBeChecked));
+        newWatchedState.link.existingLinks.unshift(newWatchedState.link.toBeChecked);
         generateRSSInfo(DOM, newWatchedState);
       }
+    })
+    .catch(() => {
+      updateLinkStatusAndError(newWatchedState, constants.status.invalid, i18n.t('errors.networkError'));
     })
     .then(() => view(newWatchedState, i18n));
 };
