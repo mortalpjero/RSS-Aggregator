@@ -1,6 +1,3 @@
-node_modules/
-dist/
-webpack.config.js
 __tests__/
 test-results/
 tests-examples/

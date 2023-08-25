@@ -1,4 +1,5 @@
 // @ts-check
+/* eslint-disable */
 const { defineConfig, devices } = require('@playwright/test');
 
 /**
