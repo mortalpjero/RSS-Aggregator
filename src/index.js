@@ -6,6 +6,7 @@ import resources from './locales/ru';
 
 // Асинхронная инициализация инстанса i18next
 // и запуск приложения
+
 i18next.init({
   lng: 'ru',
   debug: false,

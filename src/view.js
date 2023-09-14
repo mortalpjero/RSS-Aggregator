@@ -1,4 +1,4 @@
-import constants from './utils/constants';
+import { status, submit } from './utils/constants';
 // Обновления DOM через state
 
 // Визуальное обновления Фидов
@@ -71,7 +71,7 @@ const viewPosts = (state, mainContainer, i18n) => {
     );
 
     const link = document.createElement('a');
-    if (post.clicked === constants.status.clicked) {
+    if (post.clicked === status.clicked) {
       link.classList.add('fw-normal', 'link-secondary');
     }
     if (post.clicked === null) {
@@ -120,26 +120,26 @@ const view = (state, i18n) => {
   const posts = document.querySelector('.posts');
   const submitBtn = document.querySelector('[type="submit"]');
 
-  linkInput.classList.toggle('is-invalid', state.link.status === constants.status.invalid);
-  feedback.classList.toggle('text-danger', state.link.status === constants.status.invalid);
-  feedback.classList.toggle('text-success', state.link.status === constants.status.valid);
+  linkInput.classList.toggle('is-invalid', state.link.status === status.invalid);
+  feedback.classList.toggle('text-danger', state.link.status === status.invalid);
+  feedback.classList.toggle('text-success', state.link.status === status.valid);
 
   feedback.textContent = state.link.error;
 
-  if (state.link.submit === constants.submit.disabled) {
+  if (state.link.submit === submit.disabled) {
     submitBtn.setAttribute('disabled', true); // Disable the button
   } else {
     submitBtn.removeAttribute('disabled'); // Enable the button
   }
 
   if (
-    state.RSSLinks.status === constants.status.render
-    || state.RSSLinks.status === constants.status.update) {
+    state.RSSLinks.status === status.render
+    || state.RSSLinks.status === status.update) {
     viewFeeds(state, feeds, i18n);
     viewPosts(state, posts, i18n);
   }
 
-  if (state.modalWindow.status === constants.status.render) {
+  if (state.modalWindow.status === status.render) {
     viewModal(state);
   }
 };

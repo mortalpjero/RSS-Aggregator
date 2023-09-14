@@ -2,3 +2,6 @@ __tests__/
 test-results/
 tests-examples/
 playwright.config.js
+webpack.config.js
+dist/
+node_modules/
