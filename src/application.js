@@ -2,14 +2,18 @@ import onChange from 'on-change';
 import view from './view';
 import { status, submit } from './utils/constants';
 import validation from './validation';
+import usePostStore from './post/store/usePostStore';
+import useFeedStore from './feeds/store/useFeedStore';
+import useModalStore from './modal/store/useModalStore';
 import {
   validateAndUpdateWatchedState,
   getRSS,
-  modalSetting,
-  updatePosts,
 } from './rss';
 
 const app = (i18n) => {
+  const { postState, updatePosts } = usePostStore();
+  const { feedState } = useFeedStore();
+  const { modalSetting } = useModalStore();
   // Форма и инпут для фокуса и ресета при отправке
 
   const linkInput = document.querySelector('#url-input');
@@ -28,8 +32,8 @@ const app = (i18n) => {
     },
     RSSLinks: {
       status: status.empty,
-      feeds: [],
-      posts: [],
+      feeds: feedState.feeds,
+      posts: postState.posts,
     },
     modalWindow: {
       status: status.empty,

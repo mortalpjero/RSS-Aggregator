@@ -1,25 +1,23 @@
 import _ from 'lodash';
 import { status } from './utils/constants';
-import { genPosts, updateLinkStatusAndError, findItemById } from './utils/utils';
-import requestDOM from './getRequest';
+import { updateLinkStatusAndError } from './utils/utils';
+import fetchRSS from './adapters/fetchRSS';
+import usePostStore from './post/store/usePostStore';
+import useFeedStore from './feeds/store/useFeedStore';
 import view from './view';
 
 // функции для работы с RSS данными
 
-const generateRSSInfo = (DOMTree, watchedState) => {
+const generateRSSInfo = (response, watchedState) => {
   const newWatchedState = { ...watchedState };
-  const mainTitle = DOMTree.querySelector('title');
-  const mainDescription = DOMTree.querySelector('description');
-  const postUniqueId = _.uniqueId();
-  const feedInstance = {
-    id: postUniqueId,
-    title: mainTitle.textContent,
-    description: mainDescription.textContent,
-    url: watchedState.link.toBeChecked,
-  };
+  const { genPosts } = usePostStore();
+  const { genFeed } = useFeedStore();
+
+  const { feedInstance, postUniqueId } = genFeed(response, watchedState);
+
   const newPosts = [];
 
-  const allPosts = genPosts(DOMTree);
+  const allPosts = genPosts(response);
   allPosts.forEach((post) => {
     const modifiedPost = { ...post, feedId: postUniqueId };
     newPosts.push(modifiedPost);
@@ -31,36 +29,9 @@ const generateRSSInfo = (DOMTree, watchedState) => {
   newWatchedState.RSSLinks.feeds.unshift(feedInstance);
 };
 
-const updatePosts = (watchedState) => {
-  const copyState = { ...watchedState };
-  const updateInterval = 5000;
-
-  const promises = copyState.RSSLinks.feeds.map(({ id, url }) => requestDOM(url)
-    .then((response) => {
-      const posts = genPosts(response);
-      const currentPosts = watchedState.RSSLinks.posts.flat();
-      const newPosts = _.differenceBy(posts, currentPosts, 'title')
-        .map((newPost) => ({
-          ...newPost,
-          feedId: id,
-          id: _.uniqueId(),
-        }));
-
-      copyState.RSSLinks.posts = [...newPosts, ...watchedState.RSSLinks.posts];
-    })
-    .then(() => {
-      copyState.RSSLinks.status = status.update;
-    }));
-
-  return Promise.all(promises)
-    .finally(() => {
-      setTimeout(() => updatePosts(copyState), updateInterval);
-    });
-};
-
 const getRSS = (watchedState, i18n) => {
   const newWatchedState = { ...watchedState };
-  requestDOM(newWatchedState.link.toBeChecked)
+  fetchRSS(newWatchedState.link.toBeChecked)
     .then((DOM) => {
       const error = DOM.querySelector('parsererror');
       if (error) {
@@ -75,16 +46,6 @@ const getRSS = (watchedState, i18n) => {
       updateLinkStatusAndError(newWatchedState, status.invalid, i18n.t('errors.networkError'));
     })
     .then(() => view(newWatchedState, i18n));
-};
-
-const modalSetting = (watchedState) => {
-  const newWatchedState = { ...watchedState };
-  const desiredEl = findItemById(newWatchedState.RSSLinks.posts, newWatchedState.modalWindow.id);
-  desiredEl.clicked = status.clicked;
-  newWatchedState.modalWindow.status = status.render;
-  newWatchedState.modalWindow.title = desiredEl.title;
-  newWatchedState.modalWindow.description = desiredEl.description;
-  newWatchedState.modalWindow.url = desiredEl.link;
 };
 
 const validateAndUpdateWatchedState = (watchedState, validateLinkResult, i18n) => {
@@ -110,8 +71,6 @@ const validateAndUpdateWatchedState = (watchedState, validateLinkResult, i18n) =
 
 export {
   generateRSSInfo,
-  updatePosts,
   getRSS,
-  modalSetting,
   validateAndUpdateWatchedState,
 };
